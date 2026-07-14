@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"path/filepath"
@@ -31,7 +32,7 @@ func (c *Converter) Plugin(plugin *model.Plugin, input, output string) ([]model.
 	}
 
 	policies := skillPolicies(plugin)
-	binNames := bundledBins(plugin)
+	bins := newBinRewriter(bundledBins(plugin))
 	overrides := componentOverrides(plugin)
 	for _, file := range plugin.Files {
 		path := file.Path
@@ -93,7 +94,7 @@ func (c *Converter) Plugin(plugin *model.Plugin, input, output string) ([]model.
 			continue
 		}
 		if plugin.Dialect == model.Claude && component == "commands" && strings.HasSuffix(path, ".md") {
-			out, extras, findings, err := c.commandToSkill(plugin, file, binNames)
+			out, extras, findings, err := c.commandToSkill(plugin, file, bins)
 			if err != nil {
 				return nil, r, err
 			}
@@ -186,8 +187,12 @@ func (c *Converter) Plugin(plugin *model.Plugin, input, output string) ([]model.
 			r.Add(model.Finding{Component: "bin", Status: model.Transformed, Path: path, Class: model.Loss, Severity: model.Medium, Message: "copied executable, but Codex does not add bin/ to PATH", Fix: "rewrite recognized command call sites to ${PLUGIN_ROOT}/bin/..."})
 			changed = true
 		}
-		if len(binNames) > 0 && plugin.Dialect == model.Claude && strings.HasSuffix(path, ".md") {
-			file.Data = rewriteBinCalls(file.Data, binNames)
+		if !bins.empty() && plugin.Dialect == model.Claude && strings.HasSuffix(path, ".md") {
+			if rewritten := bins.rewrite(file.Data); !bytes.Equal(rewritten, file.Data) {
+				file.Data = rewritten
+				r.Add(model.Finding{Component: "bin", Status: model.Transformed, Path: path, Class: model.Loss, Severity: model.Medium, Message: "rewrote bundled bin call sites to ${PLUGIN_ROOT}/bin", Fix: "verify the referenced commands resolve under the plugin root"})
+				changed = true
+			}
 		}
 		if err := put(file); err != nil {
 			return nil, r, err
