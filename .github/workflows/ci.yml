@@ -5,8 +5,8 @@ run-name: "CI ${{ github.event.pull_request.title || github.ref_name }}"
 on:
   push:
     branches: [main]
+  # No branch filter: run on PRs to any base so stacked PRs are gated too.
   pull_request:
-    branches: [main]
   workflow_dispatch:
 
 concurrency:
