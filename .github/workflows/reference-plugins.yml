@@ -26,7 +26,7 @@ jobs:
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
         with:
           repository: anthropics/claude-code
-          ref: 1fb278b85d4546c7c04db3b3590e031b5a8a757
+          ref: 1fb278b85d4546c7c04db3b3590e031b5a8a7571
           path: reference/claude-code
           sparse-checkout: plugins
 
