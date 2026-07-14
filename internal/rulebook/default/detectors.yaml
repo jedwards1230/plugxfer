@@ -1,0 +1,9 @@
+version: 1
+detectors:
+  - {id: at-import, pattern: '(?m)^\s*@[^\s@]+\s*$', claude_to_codex: loss, codex_to_claude: activation, severity: medium}
+  - {id: inline-at-reference, pattern: '(?:^|\s)@[^\s@]+', claude_to_codex: possible, codex_to_claude: possible, severity: medium}
+  - {id: inline-shell, pattern: '!`[^`]+`', claude_to_codex: loss, codex_to_claude: activation, severity: high}
+  - {id: claude-arguments, pattern: '\$ARGUMENTS|\$[1-9]', claude_to_codex: loss, codex_to_claude: possible, severity: high}
+  - {id: codex-placeholder, pattern: '\$[A-Z][A-Z0-9_]*|\$\$', claude_to_codex: possible, codex_to_claude: loss, severity: medium}
+  - {id: handlebars, pattern: '\{\{[^}]+\}\}', claude_to_codex: possible, codex_to_claude: possible, severity: medium}
+  - {id: plugin-root-in-markdown, pattern: '\$\{(?:CLAUDE_)?PLUGIN_ROOT\}', claude_to_codex: possible, codex_to_claude: possible, severity: low}

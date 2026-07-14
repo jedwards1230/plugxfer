@@ -1,4 +1,4 @@
-.PHONY: build fmt-check test vet check
+.PHONY: build fmt-check test vet tidy-check check
 
 build:
 	go build -o plugxfer ./cmd/plugxfer
@@ -12,4 +12,7 @@ test:
 vet:
 	go vet ./...
 
-check: fmt-check vet test build
+tidy-check:
+	go mod tidy
+
+check: fmt-check tidy-check vet test build

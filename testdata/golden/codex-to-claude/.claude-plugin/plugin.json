@@ -1,0 +1,9 @@
+{
+  "author": {
+    "name": "Fixture Author"
+  },
+  "description": "Exercises Codex conversion edges",
+  "homepage": "https://example.test/codex",
+  "name": "codex-fixture",
+  "version": "1.0.0"
+}

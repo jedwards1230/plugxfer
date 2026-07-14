@@ -1,9 +1,9 @@
 # plugxfer — PRD
 
-> **Status:** draft v1 · 2026-07-13 · owner: justin
-> **Research base:** [`docs/research/claude-vs-codex-plugin-conversion.md`](../research/claude-vs-codex-plugin-conversion.md)
+> **Status:** implemented v1 · 2026-07-13 · owner: justin
+> **Research base:** [`docs/research/claude-vs-codex-plugin-conversion.md`](research/claude-vs-codex-plugin-conversion.md)
 > (source-verified against `openai/codex @ 0877afbe8` and Claude Code v2.1.207 docs) +
-> [`claude-code-plugin-spec-reference.md`](../research/claude-code-plugin-spec-reference.md).
+> [`claude-code-plugin-spec-reference.md`](research/claude-code-plugin-spec-reference.md).
 
 ## 1. Problem
 
@@ -83,14 +83,13 @@ plugxfer/
 │   ├── detectors.yaml   # axis 2: content syntax (loss/activation scanning)
 │   └── values.yaml      # axis 3: enum/value maps (effort, permissionMode, events, models)
 ├── internal/
-│   ├── ir/              # thin IR: meta, skills[], commands[], agents[], hooks[], mcp{},
-│   │                    #   binScripts[], lsp{}, outputStyles[], app, interface{}, capFlags
-│   ├── reader/  claude.go codex.go
-│   ├── writer/  claude.go codex.go
-│   ├── strategy/        # the ONLY code that transforms: copy, rename-path, drop-warn,
-│   │                    #   fold-into-skill, md-toml-agent, hook-filter, mcp-env-rewrite,
-│   │                    #   materialize-import, escape-syntax
-│   └── report/
+│   ├── model/           # thin IR: dialect, normalized files, findings, reports
+│   ├── reader/          # bounded, symlink-free dialect readers
+│   ├── engine/          # fixed transform strategies selected by the rulebook
+│   ├── marketplace/     # registry parsing, source resolution, schema reshape
+│   ├── app/             # plugin/marketplace orchestration + atomic writes
+│   ├── answers/         # reusable map loading, merging, and stubs
+│   └── report/          # deterministic Markdown rendering
 └── testdata/            # golden round-trip fixtures
 ```
 

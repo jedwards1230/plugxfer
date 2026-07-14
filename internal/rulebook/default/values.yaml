@@ -1,0 +1,11 @@
+version: 1
+effort:
+  claude_to_codex: {none: none, minimal: minimal, low: low, medium: medium, high: high, max: xhigh}
+  codex_to_claude: {low: low, medium: medium, high: high, xhigh: max}
+permission_mode:
+  claude_to_codex: {acceptEdits: workspace-write, readOnly: read-only}
+  codex_to_claude: {workspace-write: acceptEdits, read-only: readOnly}
+hook_events:
+  claude_to_codex: {SessionEnd: "", Notification: ""}
+  codex_to_claude: {PermissionRequest: "", PostCompact: "", SubagentStart: ""}
+models: {mode: ask}

@@ -5,20 +5,24 @@
 Bidirectional Claude Code and Codex plugin conversion with mandatory,
 line-addressable compatibility reporting.
 
+`docs/PRD.md` owns product scope, `docs/TESTING.md` owns the verification and
+workflow matrix, and `docs/research/` preserves the format audit trail.
+
 ## Architecture
 
 The implementation follows the product requirements in `docs/PRD.md`:
 
 - `rules/` contains embedded declarative feature, detector, and value maps.
-- `internal/ir/` owns the normalized plugin representation.
-- `internal/reader/` parses each source dialect into the IR.
-- `internal/strategy/` contains the fixed transformation strategy set.
-- `internal/writer/` emits each target dialect.
-- `internal/report/` records every copied, transformed, dropped, and needs-map item.
+- `internal/model/` owns normalized files, dialects, findings, and reports.
+- `internal/reader/` detects dialects and reads bounded, symlink-free trees.
+- `internal/engine/` applies manifest, skill/command, agent, hook, MCP, content,
+  and rule-selected transformations.
+- `internal/app/` orchestrates plugin/marketplace runs and atomic output.
+- `internal/marketplace/` parses, resolves, and reshapes registry entries.
+- `internal/report/` renders mandatory Markdown reports.
+- `internal/answers/` loads and merges deterministic value maps.
+- `internal/fsx/` enforces output safety and staging.
 - `testdata/` contains golden conversion and round-trip fixtures.
-
-The current repository is an initialization scaffold; add these packages only
-as their milestone requires them.
 
 ## Invariants
 
@@ -34,6 +38,9 @@ as their milestone requires them.
 - MCP is structurally pass-through; only environment semantics are rewritten.
 - Keep the CLI on the standard library `flag` package unless its surface grows
   enough to justify a framework.
+- Never add network fetching to a conversion path; remote marketplace entries
+  stay report-only unless a separately reviewed future flag explicitly changes
+  the v1 contract.
 
 ## Package conventions
 

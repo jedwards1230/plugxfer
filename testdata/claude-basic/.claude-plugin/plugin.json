@@ -1,0 +1,11 @@
+{
+  "name": "fixture-plugin",
+  "version": "1.0.0",
+  "description": "Exercises Claude conversion edges",
+  "author": {"name": "Fixture Author"},
+  "homepage": "https://example.test/plugin",
+  "license": "MIT",
+  "userConfig": {
+    "token": {"type": "string", "sensitive": true}
+  }
+}

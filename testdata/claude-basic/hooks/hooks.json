@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {"type": "prompt", "prompt": "Is this safe?"},
+          {"type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/bin/deploy-helper", "async": true}
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {"hooks": [{"type": "command", "command": "echo done"}]}
+    ]
+  }
+}

@@ -1,0 +1,7 @@
+name = "reviewer"
+description = "Review a converted plugin"
+developer_instructions = "Review conversion reports and verify every loss is explicit."
+model = "gpt-5.4"
+model_reasoning_effort = "high"
+sandbox_mode = "read-only"
+nickname_candidates = ["critic"]

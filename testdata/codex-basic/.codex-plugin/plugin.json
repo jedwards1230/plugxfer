@@ -1,0 +1,10 @@
+{
+  "name": "codex-fixture",
+  "version": "1.0.0",
+  "description": "Exercises Codex conversion edges",
+  "interface": {
+    "developerName": "Fixture Author",
+    "websiteUrl": "https://example.test/codex",
+    "brandColor": "#123456"
+  }
+}
