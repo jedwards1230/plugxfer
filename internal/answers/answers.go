@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"sort"
 
 	"gopkg.in/yaml.v3"
 )
@@ -95,13 +94,4 @@ func (f *File) Marshal() ([]byte, error) {
 		return nil, err
 	}
 	return data, nil
-}
-
-func (f *File) Directions() []string {
-	keys := make([]string, 0, len(f.Models))
-	for key := range f.Models {
-		keys = append(keys, key)
-	}
-	sort.Strings(keys)
-	return keys
 }
