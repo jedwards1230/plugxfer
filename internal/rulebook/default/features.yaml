@@ -1,4 +1,7 @@
 version: 1
+verified:
+  claude_code: {version: "2.1.207", date: "2026-07-13"}
+  codex: {commit: "0877afbe8", date: "2026-07-13"}
 features:
   - {id: manifest, claude_to_codex: reshape-manifest, codex_to_claude: reshape-manifest}
   - {id: skills, claude_to_codex: copy-skills, codex_to_claude: copy-skills}

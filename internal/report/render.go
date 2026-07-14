@@ -15,7 +15,11 @@ func Markdown(r model.Report) []byte {
 	if r.Output != "" {
 		fmt.Fprintf(&out, "- Output: `%s`\n", escape(r.Output))
 	}
-	fmt.Fprintf(&out, "- Mode: `%s`\n\n", mode(r.Marketplace))
+	fmt.Fprintf(&out, "- Mode: `%s`\n", mode(r.Marketplace))
+	if r.Verified != nil {
+		fmt.Fprintf(&out, "- Rules verified against: %s\n", cell(r.Verified.Line()))
+	}
+	out.WriteByte('\n')
 
 	if len(r.Children) > 0 {
 		out.WriteString("## Plugins\n\n| Plugin | Source | Result | Report |\n|---|---|---:|---|\n")
@@ -43,25 +47,58 @@ func Markdown(r model.Report) []byte {
 	}
 	out.WriteByte('\n')
 
+	embedded := embedsChildFindings(r.Children)
 	out.WriteString("## Details\n\n")
 	if len(r.Findings) == 0 {
-		if len(r.Children) > 0 {
+		switch {
+		case embedded:
+			out.WriteString("No marketplace-level findings. Per-plugin findings are embedded below.\n")
+		case len(r.Children) > 0:
 			out.WriteString("No marketplace-level findings. See per-plugin reports for component details.\n")
-		} else {
+		default:
 			out.WriteString("No components were discovered.\n")
 		}
 	} else {
-		out.WriteString("| Status | Component | Location | Class | Severity | Detail | Applied fix |\n|---|---|---|---|---|---|---|\n")
-		for _, f := range r.Findings {
-			fmt.Fprintf(&out, "| %s | %s | `%s` | %s | %s | %s | %s |\n", f.Status, cell(f.Component), escape(f.Location()), empty(string(f.Class)), empty(string(f.Severity)), cell(f.Message), cell(empty(f.Fix)))
+		writeFindingsTable(&out, r.Findings)
+	}
+
+	if embedded {
+		out.WriteString("\n## Per-plugin details\n\n")
+		children := append([]model.ChildReport(nil), r.Children...)
+		sort.Slice(children, func(i, j int) bool { return children[i].Name < children[j].Name })
+		for _, child := range children {
+			fmt.Fprintf(&out, "### %s (`%s`)\n\n", cell(child.Name), escape(child.Source))
+			if len(child.Findings) == 0 {
+				out.WriteString("No findings.\n\n")
+				continue
+			}
+			writeFindingsTable(&out, child.Findings)
+			out.WriteByte('\n')
 		}
 	}
+
 	out.WriteString("\n## Environment notes\n\n")
 	if r.Target == model.Codex {
 		out.WriteString("- Codex plugin hooks are trust-gated and must be enabled and approved before they run.\n- Converted agents are emitted under project `.codex/agents/`; Codex plugins cannot bundle agent roles.\n")
 	}
 	out.WriteString("- plugxfer never executed plugin scripts, hooks, or MCP commands during this run.\n")
 	return []byte(out.String())
+}
+
+func writeFindingsTable(out *strings.Builder, findings []model.Finding) {
+	out.WriteString("| Status | Component | Location | Class | Severity | Detail | Applied fix |\n|---|---|---|---|---|---|---|\n")
+	for _, f := range findings {
+		fmt.Fprintf(out, "| %s | %s | `%s` | %s | %s | %s | %s |\n", f.Status, cell(f.Component), escape(f.Location()), empty(string(f.Class)), empty(string(f.Severity)), cell(f.Message), cell(empty(f.Fix)))
+	}
+}
+
+func embedsChildFindings(children []model.ChildReport) bool {
+	for _, child := range children {
+		if len(child.Findings) > 0 {
+			return true
+		}
+	}
+	return false
 }
 
 func mode(marketplace bool) string {

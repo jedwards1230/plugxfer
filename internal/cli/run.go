@@ -27,16 +27,16 @@ var version = "dev"
 
 func Run(args []string, stdout, stderr io.Writer) int {
 	if len(args) == 0 || args[0] == "help" || args[0] == "--help" || args[0] == "-h" {
-		fmt.Fprint(stdout, usage)
+		_, _ = fmt.Fprint(stdout, usage)
 		return 0
 	}
 	if args[0] == "--version" || args[0] == "version" {
-		fmt.Fprintf(stdout, "plugxfer %s\n", version)
+		_, _ = fmt.Fprintf(stdout, "plugxfer %s\n", version)
 		return 0
 	}
 	mode := app.Mode(args[0])
 	if mode != app.Check && mode != app.Convert {
-		fmt.Fprintf(stderr, "unknown command %q\n\n%s", args[0], usage)
+		_, _ = fmt.Fprintf(stderr, "unknown command %q\n\n%s", args[0], usage)
 		return 3
 	}
 	options, help, err := parse(mode, args[1:], stderr)
@@ -44,16 +44,16 @@ func Run(args []string, stdout, stderr io.Writer) int {
 		return 0
 	}
 	if err != nil {
-		fmt.Fprintf(stderr, "plugxfer: %v\n", err)
+		_, _ = fmt.Fprintf(stderr, "plugxfer: %v\n", err)
 		return 3
 	}
 	result, err := app.Run(options)
 	if err != nil {
-		fmt.Fprintf(stderr, "plugxfer: %v\n", err)
+		_, _ = fmt.Fprintf(stderr, "plugxfer: %v\n", err)
 		return 3
 	}
 	if _, err := stdout.Write(result.Markdown); err != nil {
-		fmt.Fprintf(stderr, "plugxfer: write report: %v\n", err)
+		_, _ = fmt.Fprintf(stderr, "plugxfer: write report: %v\n", err)
 		return 3
 	}
 	return result.ExitCode
@@ -69,9 +69,9 @@ func parse(mode app.Mode, args []string, stderr io.Writer) (app.Options, bool, e
 	fs.StringVar(&mapPath, "map", "", "answers file")
 	fs.StringVar(&rulesPath, "rules", "", "rulebook override directory")
 	fs.StringVar(&only, "only", "", "comma-separated marketplace plugin names")
-	fs.BoolVar(&strict, "strict", false, "return non-zero when drops or unresolved mappings remain")
+	fs.BoolVar(&strict, "strict", false, "return non-zero when any drop, unresolved mapping, or compatibility loss remains")
 	fs.Usage = func() {
-		fmt.Fprintf(stderr, "Usage: plugxfer %s <dir>%s [options]\n", mode, outputUsage(mode))
+		_, _ = fmt.Fprintf(stderr, "Usage: plugxfer %s <dir>%s [options]\n", mode, outputUsage(mode))
 		fs.PrintDefaults()
 	}
 	flagArgs, positionals, err := splitArgs(args)

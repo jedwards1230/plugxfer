@@ -3,8 +3,8 @@ name: CodeQL
 on:
   push:
     branches: [main]
+  # No branch filter: run on PRs to any base so stacked PRs are gated too.
   pull_request:
-    branches: [main]
   schedule:
     - cron: "23 8 * * 1"
   workflow_dispatch:
@@ -27,7 +27,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16  # v6.5.0
         with:
-          go-version: "1.25.12"
+          go-version-file: go.mod
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@02c5e83432fe5497fd85b873b6c9f16a8578e1d9  # v3

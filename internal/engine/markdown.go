@@ -14,7 +14,39 @@ import (
 
 var exactImport = regexp.MustCompile(`^\s*@([^\s@]+)\s*$`)
 
-func (c *Converter) commandToSkill(plugin *model.Plugin, file model.File, bins []string) (model.File, []model.File, []model.Finding, error) {
+var (
+	inlineShellActivation = regexp.MustCompile("!`")
+	leadingAtActivation   = regexp.MustCompile(`(?m)^(\s*)@`)
+	restoreBinCall        = regexp.MustCompile(`(?m)^(\s*)\$\{(?:CLAUDE_)?PLUGIN_ROOT\}/bin/([^\s]+)(\s|$)`)
+)
+
+// binRewriter holds the per-bin call-site patterns compiled once per conversion
+// so a plugin with many Markdown files does not recompile them per file.
+type binRewriter struct {
+	names    []string
+	patterns []*regexp.Regexp
+}
+
+func newBinRewriter(names []string) binRewriter {
+	patterns := make([]*regexp.Regexp, len(names))
+	for i, name := range names {
+		patterns[i] = regexp.MustCompile(`(?m)^(\s*)(` + regexp.QuoteMeta(name) + `)(\s|$)`)
+	}
+	return binRewriter{names: names, patterns: patterns}
+}
+
+func (b binRewriter) empty() bool { return len(b.names) == 0 }
+
+// rewrite rewrites bare bundled-bin call sites to ${PLUGIN_ROOT}/bin/<name>.
+func (b binRewriter) rewrite(data []byte) []byte {
+	text := string(data)
+	for i, name := range b.names {
+		text = b.patterns[i].ReplaceAllString(text, `${1}$${PLUGIN_ROOT}/bin/`+name+`${3}`)
+	}
+	return []byte(text)
+}
+
+func (c *Converter) commandToSkill(plugin *model.Plugin, file model.File, bins binRewriter) (model.File, []model.File, []model.Finding, error) {
 	doc, err := frontmatter.Parse(file.Data, false)
 	if err != nil {
 		return model.File{}, nil, nil, fmt.Errorf("%s: %w", file.Path, err)
@@ -25,7 +57,7 @@ func (c *Converter) commandToSkill(plugin *model.Plugin, file model.File, bins [
 		description = firstContentLine(doc.Body, "Converted Claude command")
 	}
 	body, materialized := materializeImports(plugin.Root, doc.Body)
-	body = string(rewriteBinCalls([]byte(body), bins))
+	body = string(bins.rewrite([]byte(body)))
 	fields := map[string]any{"name": name, "description": description, "plugxfer-origin": "command"}
 	for _, key := range []string{"allowed-tools", "argument-hint", "disable-model-invocation"} {
 		if value, ok := doc.Fields[key]; ok {
@@ -195,23 +227,13 @@ func dematerializeImports(body string) string {
 	return strings.Join(lines, "\n")
 }
 
-func rewriteBinCalls(data []byte, names []string) []byte {
-	text := string(data)
-	for _, name := range names {
-		rx := regexp.MustCompile(`(?m)^(\s*)(` + regexp.QuoteMeta(name) + `)(\s|$)`)
-		text = rx.ReplaceAllString(text, `${1}$${PLUGIN_ROOT}/bin/`+name+`${3}`)
-	}
-	return []byte(text)
-}
-
 func restoreBinCalls(body string) string {
-	rx := regexp.MustCompile(`(?m)^(\s*)\$\{(?:CLAUDE_)?PLUGIN_ROOT\}/bin/([^\s]+)(\s|$)`)
-	return rx.ReplaceAllString(body, `${1}${2}${3}`)
+	return restoreBinCall.ReplaceAllString(body, `${1}${2}${3}`)
 }
 
 func escapeClaudeActivation(body string) string {
-	body = regexp.MustCompile("!`").ReplaceAllString(body, "\\!`")
-	body = regexp.MustCompile(`(?m)^(\s*)@`).ReplaceAllString(body, `${1}\@`)
+	body = inlineShellActivation.ReplaceAllString(body, "\\!`")
+	body = leadingAtActivation.ReplaceAllString(body, `${1}\@`)
 	return body
 }
 

@@ -155,9 +155,31 @@ func (c *Converter) mcpToClaude(path, name string, server map[string]any) []mode
 		delete(server, "bearer_token_env_var")
 		findings = append(findings, transformed("mcp", path, "mapped bearer_token_env_var to Authorization header"))
 	}
-	if headers, ok := server["http_headers"]; ok {
-		server["headers"] = headers
+	if httpHeaders, ok := server["http_headers"].(map[string]any); ok {
+		headers, _ := server["headers"].(map[string]any)
+		if headers == nil {
+			headers = map[string]any{}
+		}
+		collision := false
+		for key, value := range httpHeaders {
+			// A bearer_token_env_var already materialized Authorization above;
+			// keep it rather than let a static http_headers entry silently
+			// clobber it (previously the whole headers map was overwritten).
+			if _, exists := headers[key]; exists {
+				collision = true
+				continue
+			}
+			headers[key] = value
+		}
+		if len(headers) > 0 {
+			server["headers"] = headers
+		}
 		delete(server, "http_headers")
+		msg := "mapped http_headers to Claude headers"
+		if collision {
+			msg = "mapped http_headers to Claude headers; kept existing header on collision"
+		}
+		findings = append(findings, transformed("mcp", path, msg))
 	}
 	if envHeaders, ok := server["env_http_headers"].(map[string]any); ok {
 		headers, _ := server["headers"].(map[string]any)

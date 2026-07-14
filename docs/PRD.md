@@ -49,12 +49,15 @@ plugxfer convert <dir> -o <outdir>          # convert; report → stdout + <outd
   [--to claude|codex]                       # override auto-detection
   [--map <file>]                            # answers file (default: ./plugxfer.map.yaml if present)
   [--rules <dir>]                           # override embedded rulebook
-  [--strict]                                # exit non-zero if any drop/needs-map remains
+  [--strict]                                # exit non-zero if any drop, needs-map, or compat loss remains
 ```
 
 Direction auto-detect: `.claude-plugin/` vs `.codex-plugin/` (both present → require `--to`;
 neither → probe default component dirs). Exit codes: `0` clean, `1` converted-with-losses
-(report lists them), `2` needs-map entries unresolved, `3` error.
+(report lists them), `2` needs-map entries unresolved, `3` error. By default only dropped
+components (1) and unresolved mappings (2) affect the code; `--strict` additionally escalates
+the otherwise-advisory loss/activation warnings (which stay exit-0 by default) so CI can gate
+on a perfectly clean conversion.
 
 **Marketplace mode (first-class).** If the input dir's manifest is a *marketplace*
 (`.claude-plugin/marketplace.json` or `.agents/plugins/marketplace.json`), plugxfer fans out
@@ -129,9 +132,12 @@ static map; goes to plugxfer.map.yaml).
 
 ## 7. The report + answers file
 
-- `PLUGXFER-REPORT.md`: summary table (per component: status), then detail sections — drops with
-  reasons, detector findings with file:line + class (loss/activation/possible) + applied fix,
-  needs-map stubs, and environment notes (trust-gate on Codex, agents emitted outside plugin).
+- `PLUGXFER-REPORT.md`: a header (source/target/mode + which upstream CLI specs the rules were
+  verified against, from the rulebook's optional `verified:` block), a summary table (per
+  component: status), then detail sections — drops with reasons, detector findings with file:line
+  + class (loss/activation/possible) + applied fix, needs-map stubs, and environment notes
+  (trust-gate on Codex, agents emitted outside plugin). In marketplace `check` mode (which writes
+  nothing) the per-plugin findings are embedded in the aggregate report instead of linked files.
 - `plugxfer.map.yaml`: written/merged when `ask`-class values are unmapped; re-run picks it up.
   Reusable across plugins; committable.
 
