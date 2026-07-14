@@ -1,0 +1,6 @@
+/plugxfer
+/coverage.out
+/dist/
+/.idea/
+/.vscode/
+.DS_Store
