@@ -100,6 +100,31 @@ func TestMarketplaceOnlySelection(t *testing.T) {
 	}
 }
 
+func TestMarketplaceCheckEmbedsPerPluginDetail(t *testing.T) {
+	root := t.TempDir()
+	write(t, root, ".claude-plugin/marketplace.json", `{"name":"fixtures","plugins":[{"name":"local","source":"./plugins/local","description":"local","category":"other"}]}`)
+	write(t, root, "plugins/local/.claude-plugin/plugin.json", `{"name":"local","description":"local"}`)
+	write(t, root, "plugins/local/.lsp.json", `{"lspServers":{}}`)
+	write(t, root, "plugins/local/skills/test/SKILL.md", "---\nname: test\ndescription: test\n---\n\nTest.\n")
+
+	result, err := Run(Options{Mode: Check, Input: root, Target: model.Codex})
+	if err != nil {
+		t.Fatal(err)
+	}
+	report := string(result.Markdown)
+	// The aggregate must surface per-plugin component details in check mode,
+	// since no per-plugin report files are written.
+	for _, want := range []string{"## Per-plugin details", "### local", "lsp", "dropped", "Rules verified against:"} {
+		if !strings.Contains(report, want) {
+			t.Errorf("check-mode aggregate report missing %q:\n%s", want, report)
+		}
+	}
+	// It must not dangle a link to a per-plugin report file that check never wrote.
+	if strings.Contains(report, "plugins/local/PLUGXFER-REPORT.md") {
+		t.Errorf("check-mode report links a non-existent per-plugin file:\n%s", report)
+	}
+}
+
 func TestSemanticRoundTrip(t *testing.T) {
 	input := filepath.Join("..", "..", "testdata", "claude-basic")
 	root := t.TempDir()

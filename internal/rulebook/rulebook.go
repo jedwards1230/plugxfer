@@ -31,8 +31,9 @@ type Detector struct {
 }
 
 type featureFile struct {
-	Version  int       `yaml:"version"`
-	Features []Feature `yaml:"features"`
+	Version  int                  `yaml:"version"`
+	Verified *model.RulesVerified `yaml:"verified"`
+	Features []Feature            `yaml:"features"`
 }
 
 type detectorFile struct {
@@ -58,6 +59,10 @@ type Book struct {
 	Effort         DirectionMap
 	PermissionMode DirectionMap
 	HookEvents     DirectionMap
+	// Verified records the upstream CLI specs this rulebook was confirmed
+	// against. It is optional: custom --rules directories that omit the
+	// `verified:` block leave it nil and the report header line is skipped.
+	Verified *model.RulesVerified
 }
 
 var strategies = map[string]bool{
@@ -99,7 +104,7 @@ func Load(override string) (*Book, error) {
 	if ff.Version != 1 || df.Version != 1 || vf.Version != 1 {
 		return nil, fmt.Errorf("unsupported rulebook version; expected 1")
 	}
-	b := &Book{Features: make(map[string]Feature), Detectors: df.Detectors, Effort: vf.Effort, PermissionMode: vf.PermissionMode, HookEvents: vf.HookEvents}
+	b := &Book{Features: make(map[string]Feature), Detectors: df.Detectors, Effort: vf.Effort, PermissionMode: vf.PermissionMode, HookEvents: vf.HookEvents, Verified: ff.Verified}
 	for _, feature := range ff.Features {
 		if feature.ID == "" || !strategies[feature.ClaudeToCodex] || !strategies[feature.CodexToClaude] {
 			return nil, fmt.Errorf("feature %q has an unknown strategy", feature.ID)

@@ -3,6 +3,7 @@ package rulebook
 import (
 	"os"
 	"path/filepath"
+	"reflect"
 	"testing"
 
 	"github.com/jedwards1230/plugxfer/internal/model"
@@ -23,6 +24,15 @@ func TestEmbeddedAndPublicRulebooksMatchBehavior(t *testing.T) {
 				t.Errorf("%s/%s = %q, want %q", feature, dialect, got, want)
 			}
 		}
+	}
+	if embedded.Verified == nil {
+		t.Fatal("embedded rulebook is missing the verified block")
+	}
+	if !reflect.DeepEqual(public.Verified, embedded.Verified) {
+		t.Errorf("verified block drifted: public %#v, embedded %#v", public.Verified, embedded.Verified)
+	}
+	if embedded.Verified.ClaudeCode.Version == "" || embedded.Verified.Codex.Commit == "" {
+		t.Errorf("verified block is incomplete: %#v", embedded.Verified)
 	}
 	if len(public.Detectors) != len(embedded.Detectors) {
 		t.Fatalf("public detectors = %d, embedded = %d", len(public.Detectors), len(embedded.Detectors))

@@ -87,14 +87,17 @@ func runPlugin(options Options, input string, source, target model.Dialect, conv
 		return Result{}, err
 	}
 	conversionReport.Target = target
-	markdown := report.Markdown(conversionReport)
+	conversionReport.Verified = converter.Rules.Verified
+	var output string
 	if options.Mode == Convert {
-		output, err := fsx.ValidateOutput(input, options.Output)
+		output, err = fsx.ValidateOutput(input, options.Output)
 		if err != nil {
 			return Result{}, err
 		}
 		conversionReport.Output = output
-		markdown = report.Markdown(conversionReport)
+	}
+	markdown := report.Markdown(conversionReport)
+	if options.Mode == Convert {
 		files = append(files, model.File{Path: "PLUGXFER-REPORT.md", Mode: 0o644, Data: markdown})
 		if answerFile.HasStubs() {
 			data, err := answerFile.Marshal()
@@ -133,7 +136,7 @@ func runMarketplace(options Options, input string, source, target model.Dialect,
 	if err := validateOnly(registry, options.Only); err != nil {
 		return Result{}, err
 	}
-	aggregate := model.Report{Source: source, Target: target, Input: input, Output: options.Output, Marketplace: true}
+	aggregate := model.Report{Source: source, Target: target, Input: input, Output: options.Output, Marketplace: true, Verified: converter.Rules.Verified}
 	var outputFiles []model.File
 	for _, entry := range registry.Entries {
 		rel, local, err := entry.LocalPath()
@@ -177,18 +180,23 @@ func runMarketplace(options Options, input string, source, target model.Dialect,
 			return Result{}, fmt.Errorf("plugin %s: %w", entry.Name, err)
 		}
 		childReport.Target = target
-		childMarkdown := report.Markdown(childReport)
-		childReportPath := filepath.ToSlash(filepath.Join(rel, "PLUGXFER-REPORT.md"))
-		if options.Mode == Check {
-			childReportPath = ""
+		childReport.Verified = converter.Rules.Verified
+		child := model.ChildReport{Name: entry.Name, Source: rel, ExitCode: childReport.ExitCode(options.Strict), Counts: childReport.Counts()}
+		if options.Mode == Convert {
+			// Per-plugin reports are written to disk in convert mode.
+			child.ReportPath = filepath.ToSlash(filepath.Join(rel, "PLUGXFER-REPORT.md"))
+			childMarkdown := report.Markdown(childReport)
+			outputFiles = append(outputFiles, model.File{Path: child.ReportPath, Mode: 0o644, Data: childMarkdown})
+		} else {
+			// Check mode writes nothing, so carry the per-plugin findings into
+			// the aggregate report instead of pointing at a file that will not
+			// exist ("silence is a bug").
+			child.Findings = childReport.Findings
 		}
-		aggregate.Children = append(aggregate.Children, model.ChildReport{Name: entry.Name, Source: rel, ReportPath: childReportPath, ExitCode: childReport.ExitCode(options.Strict), Counts: childReport.Counts()})
+		aggregate.Children = append(aggregate.Children, child)
 		for _, file := range childFiles {
 			file.Path = filepath.ToSlash(filepath.Join(rel, file.Path))
 			outputFiles = append(outputFiles, file)
-		}
-		if options.Mode == Convert {
-			outputFiles = append(outputFiles, model.File{Path: childReportPath, Mode: 0o644, Data: childMarkdown})
 		}
 	}
 	convertedRegistry, err := registry.Render(target)
@@ -199,14 +207,16 @@ func runMarketplace(options Options, input string, source, target model.Dialect,
 	if target == model.Codex {
 		outputFiles = append(outputFiles, registryFile)
 	}
-	markdown := report.Markdown(aggregate)
+	var output string
 	if options.Mode == Convert {
-		output, err := fsx.ValidateOutput(input, options.Output)
+		output, err = fsx.ValidateOutput(input, options.Output)
 		if err != nil {
 			return Result{}, err
 		}
 		aggregate.Output = output
-		markdown = report.Markdown(aggregate)
+	}
+	markdown := report.Markdown(aggregate)
+	if options.Mode == Convert {
 		outputFiles = append(outputFiles, model.File{Path: "PLUGXFER-REPORT.md", Mode: 0o644, Data: markdown})
 		if answerFile.HasStubs() {
 			data, err := answerFile.Marshal()
