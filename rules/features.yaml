@@ -1,0 +1,47 @@
+version: 1
+# Upstream CLI specs these rules were confirmed against. Surfaced in every
+# report header; optional for custom rulebooks.
+verified:
+  claude_code:
+    version: "2.1.207"
+    date: "2026-07-13"
+  codex:
+    commit: "0877afbe8"
+    date: "2026-07-13"
+features:
+  - id: manifest
+    claude_to_codex: reshape-manifest
+    codex_to_claude: reshape-manifest
+  - id: skills
+    claude_to_codex: copy-skills
+    codex_to_claude: copy-skills
+  - id: mcp
+    claude_to_codex: mcp-env-rewrite
+    codex_to_claude: mcp-env-rewrite
+  - id: hooks
+    claude_to_codex: hook-filter
+    codex_to_claude: hook-filter
+  - id: commands
+    claude_to_codex: fold-into-skill
+    codex_to_claude: unfold-command-skill
+  - id: agents
+    claude_to_codex: md-toml-agent
+    codex_to_claude: md-toml-agent
+  - id: instructions
+    claude_to_codex: rename-path
+    codex_to_claude: rename-path
+  - id: bin
+    claude_to_codex: copy-warn
+    codex_to_claude: copy
+  - id: lsp
+    claude_to_codex: drop-warn
+    codex_to_claude: copy
+  - id: output-styles
+    claude_to_codex: drop-warn
+    codex_to_claude: copy
+  - id: app
+    claude_to_codex: copy
+    codex_to_claude: drop-warn
+  - id: other
+    claude_to_codex: copy
+    codex_to_claude: copy

@@ -1,0 +1,7 @@
+description = "Review a converted plugin"
+developer_instructions = "Review conversion reports and verify every loss is explicit."
+mcp_servers = ["files", "docs"]
+model = "gpt-5.4"
+model_reasoning_effort = "xhigh"
+name = "reviewer"
+sandbox_mode = "workspace-write"

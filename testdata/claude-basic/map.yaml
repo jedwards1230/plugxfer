@@ -1,0 +1,10 @@
+version: 1
+models:
+  claude-to-codex:
+    opus: gpt-5.4
+    sonnet: gpt-5.4-mini
+  codex-to-claude:
+    gpt-5.4: opus
+    gpt-5.4-mini: sonnet
+replacements:
+  ".mcp.json#mcpServers.fixture.env.URL": "https://example.test/mcp"

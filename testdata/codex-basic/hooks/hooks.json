@@ -1,0 +1,10 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {"matcher": "write_file", "hooks": [{"type": "command", "command": "${PLUGIN_ROOT}/scripts/check.sh"}]}
+    ],
+    "PermissionRequest": [
+      {"hooks": [{"type": "command", "command": "echo permission"}]}
+    ]
+  }
+}

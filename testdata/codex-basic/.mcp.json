@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "fixture": {
+      "command": "fixture-mcp",
+      "env_vars": ["FIXTURE_TOKEN"]
+    },
+    "remote": {
+      "type": "http",
+      "url": "https://example.test/mcp",
+      "bearer_token_env_var": "REMOTE_TOKEN"
+    }
+  }
+}

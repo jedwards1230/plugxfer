@@ -1,0 +1,11 @@
+{
+  "description": "Exercises Claude conversion edges",
+  "interface": {
+    "developerName": "Fixture Author",
+    "displayName": "fixture-plugin",
+    "shortDescription": "Exercises Claude conversion edges",
+    "websiteUrl": "https://example.test/plugin"
+  },
+  "name": "fixture-plugin",
+  "version": "1.0.0"
+}

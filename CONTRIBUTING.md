@@ -28,6 +28,9 @@ make build
 
 # Run the full local CI suite
 make check
+
+# Run golden, integration, round-trip, and CLI subprocess tests
+go test -race ./...
 ```
 
 ## Documentation
@@ -43,6 +46,8 @@ feature.
 - Add focused tests for every reader, detector, strategy, or writer change.
 - Update golden fixtures when conversion output intentionally changes.
 - Confirm that no compatibility loss disappeared from the report silently.
+- Keep public `rules/*.yaml` behavior aligned with the embedded rulebooks; the
+  rulebook test enforces the feature strategy map.
 
 ## Branching and commits
 
@@ -59,6 +64,8 @@ feature.
 
 ## Releases
 
-The release process will be defined before the first tagged version. Until
-then, `main` is the only supported development channel and no stability
-guarantee is made.
+Push an annotated, signed `vX.Y.Z` tag from a clean `main` commit after CI and
+the pinned reference-plugin workflow pass. The release workflow reruns tests,
+cross-compiles static archives for supported platforms, writes SHA-256
+checksums, and publishes a GitHub release. Before v1.0, CLI and rulebook schemas
+may change between minor releases.

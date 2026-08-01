@@ -1,9 +1,9 @@
 # plugxfer — PRD
 
-> **Status:** draft v1 · 2026-07-13 · owner: justin
-> **Research base:** [`docs/research/claude-vs-codex-plugin-conversion.md`](../research/claude-vs-codex-plugin-conversion.md)
+> **Status:** implemented v1 · 2026-07-13 · owner: justin
+> **Research base:** [`docs/research/claude-vs-codex-plugin-conversion.md`](research/claude-vs-codex-plugin-conversion.md)
 > (source-verified against `openai/codex @ 0877afbe8` and Claude Code v2.1.207 docs) +
-> [`claude-code-plugin-spec-reference.md`](../research/claude-code-plugin-spec-reference.md).
+> [`claude-code-plugin-spec-reference.md`](research/claude-code-plugin-spec-reference.md).
 
 ## 1. Problem
 
@@ -49,12 +49,15 @@ plugxfer convert <dir> -o <outdir>          # convert; report → stdout + <outd
   [--to claude|codex]                       # override auto-detection
   [--map <file>]                            # answers file (default: ./plugxfer.map.yaml if present)
   [--rules <dir>]                           # override embedded rulebook
-  [--strict]                                # exit non-zero if any drop/needs-map remains
+  [--strict]                                # exit non-zero if any drop, needs-map, or compat loss remains
 ```
 
 Direction auto-detect: `.claude-plugin/` vs `.codex-plugin/` (both present → require `--to`;
 neither → probe default component dirs). Exit codes: `0` clean, `1` converted-with-losses
-(report lists them), `2` needs-map entries unresolved, `3` error.
+(report lists them), `2` needs-map entries unresolved, `3` error. By default only dropped
+components (1) and unresolved mappings (2) affect the code; `--strict` additionally escalates
+the otherwise-advisory loss/activation warnings (which stay exit-0 by default) so CI can gate
+on a perfectly clean conversion.
 
 **Marketplace mode (first-class).** If the input dir's manifest is a *marketplace*
 (`.claude-plugin/marketplace.json` or `.agents/plugins/marketplace.json`), plugxfer fans out
@@ -83,14 +86,13 @@ plugxfer/
 │   ├── detectors.yaml   # axis 2: content syntax (loss/activation scanning)
 │   └── values.yaml      # axis 3: enum/value maps (effort, permissionMode, events, models)
 ├── internal/
-│   ├── ir/              # thin IR: meta, skills[], commands[], agents[], hooks[], mcp{},
-│   │                    #   binScripts[], lsp{}, outputStyles[], app, interface{}, capFlags
-│   ├── reader/  claude.go codex.go
-│   ├── writer/  claude.go codex.go
-│   ├── strategy/        # the ONLY code that transforms: copy, rename-path, drop-warn,
-│   │                    #   fold-into-skill, md-toml-agent, hook-filter, mcp-env-rewrite,
-│   │                    #   materialize-import, escape-syntax
-│   └── report/
+│   ├── model/           # thin IR: dialect, normalized files, findings, reports
+│   ├── reader/          # bounded, symlink-free dialect readers
+│   ├── engine/          # fixed transform strategies selected by the rulebook
+│   ├── marketplace/     # registry parsing, source resolution, schema reshape
+│   ├── app/             # plugin/marketplace orchestration + atomic writes
+│   ├── answers/         # reusable map loading, merging, and stubs
+│   └── report/          # deterministic Markdown rendering
 └── testdata/            # golden round-trip fixtures
 ```
 
@@ -130,9 +132,12 @@ static map; goes to plugxfer.map.yaml).
 
 ## 7. The report + answers file
 
-- `PLUGXFER-REPORT.md`: summary table (per component: status), then detail sections — drops with
-  reasons, detector findings with file:line + class (loss/activation/possible) + applied fix,
-  needs-map stubs, and environment notes (trust-gate on Codex, agents emitted outside plugin).
+- `PLUGXFER-REPORT.md`: a header (source/target/mode + which upstream CLI specs the rules were
+  verified against, from the rulebook's optional `verified:` block), a summary table (per
+  component: status), then detail sections — drops with reasons, detector findings with file:line
+  + class (loss/activation/possible) + applied fix, needs-map stubs, and environment notes
+  (trust-gate on Codex, agents emitted outside plugin). In marketplace `check` mode (which writes
+  nothing) the per-plugin findings are embedded in the aggregate report instead of linked files.
 - `plugxfer.map.yaml`: written/merged when `ask`-class values are unmapped; re-run picks it up.
   Reusable across plugins; committable.
 

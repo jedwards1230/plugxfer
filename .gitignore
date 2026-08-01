@@ -1,6 +1,7 @@
 /plugxfer
 /coverage.out
 /dist/
+/reference/
 /.idea/
 /.vscode/
 .DS_Store
